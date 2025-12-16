@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colour Detective - रंग पहचानो</title>
+    <link rel="manifest" href="manifest.json">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(function (err) {
+          console.log('SW registration failed', err);
+        });
+    });
+  }
+</script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .color-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 15px;
+            margin: 0 auto 30px;
+            border: 3px solid #ddd;
+            background: #f0f0f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .color-preview.active {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .mode-btn:hover {
+            border-color: #667eea;
+            background: #f5f5f5;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .rgb-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .rgb-value {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .rgb-red { color: #e74c3c; }
+        .rgb-green { color: #27ae60; }
+        .rgb-blue { color: #3498db; }
+        .ryb-yellow { color: #f39c12; }
+        .hsl-hue { color: #667eea; }
+        .hsl-sat { color: #16a085; }
+        .hsl-light { color: #555; }
+
+        .decomposition {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .decomp-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #eee;
+        }
+
+        .decomp-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .decomp-percentage {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .decomp-bar {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .decomp-bar-fill {
+            height: 100%;
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .combination-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .combination-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .color-boxes {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .small-color-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 2px solid white;
+        }
+
+        .hidden-canvas {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            display: none;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        #photoPickerScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: black;
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #photoPickerScreen.active {
+            display: flex;
+        }
+
+        .photo-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        #selectedImage {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .picker-info {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .color-cursor {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            display: none;
+            z-index: 5;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent);
+        }
+
+        .picker-buttons {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .picker-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .picker-btn-select {
+            background: #667eea;
+            color: white;
+        }
+
+        .picker-btn-cancel {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #liveCameraScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: black;
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+
+        #liveCameraScreen.active {
+            display: flex;
+        }
+
+        .live-camera-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .live-header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+        }
+
+        .live-rgb-display {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: flex;
+            gap: 15px;
+            font-weight: bold;
+        }
+
+        .live-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .crosshair-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .crosshair-center {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .crosshair-circle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .crosshair-h,
+        .crosshair-v {
+            position: absolute;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+        }
+
+        .crosshair-h {
+            width: 80px;
+            height: 2px;
+        }
+
+        .crosshair-v {
+            width: 2px;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.8), transparent);
+        }
+
+        .live-color-preview {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            top: -80px;
+            background: #f0f0f0;
+            transition: background 0.1s ease;
+        }
+
+        .live-camera-buttons {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            gap: 15px;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .total-percentage {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .color-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .color-info-label {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .color-info-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .hex-value {
+            font-family: monospace;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .action-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .palette-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .palette-item {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .palette-item:hover {
+            background: #f5f5f5;
+            border-color: #667eea;
+        }
+
+        .palette-item.selected {
+            background: #e8f4f8;
+            border-color: #667eea;
+        }
+
+        .palette-colors {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .palette-color-swatch {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .modal-btn-confirm {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: #5568d3;
+        }
+
+        .modal-btn-cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .harmony-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .harmony-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .harmony-colors {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .harmony-color {
+            flex: 1;
+            text-align: center;
+        }
+
+        .harmony-box {
+            width: 100%;
+            height: 60px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            margin-bottom: 5px;
+        }
+
+        .harmony-code {
+            font-size: 11px;
+            font-family: monospace;
+            color: #666;
+        }
+
+        .paint-brand-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .paint-match-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .paint-match-excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .paint-match-good {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .paint-match-fair {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .language-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .lang-btn {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .lang-btn:hover {
+            border-color: #667eea;
+            background: #f5f5f5;
+        }
+
+        .lang-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .saved-colors-preview {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .saved-color-chip {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .saved-color-chip:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .saved-color-chip .delete-chip {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+        }
+
+        .saved-color-chip:hover .delete-chip {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <h1>🎨 Colour Detective</h1>
+            <button class="nav-btn" onclick="openSettings()" title="Settings">⚙️</button>
+        </div>
+        <p class="subtitle" id="subtitle">रंग की पहचान करें - किस तरह बना है</p>
+
+        <div id="errorMsg" class="error"></div>
+        <div id="successMsg" class="success-message"></div>
+
+        <div class="color-preview" id="colorPreview"></div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="openLiveCamera()">📷 कैमरा</button>
+            <button class="btn-secondary" onclick="openGallery()">🖼️ गैलरी</button>
+            <button class="btn-secondary" onclick="resetApp()">🔄 रीसेट</button>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('rgb')">🖥️ RGB<br>(Digital)</button>
+            <button class="mode-btn" onclick="switchMode('ryb')">🎨 RYB<br>(Paint)</button>
+            <button class="mode-btn" onclick="switchMode('hsl')">🌈 HSL<br>(Design)</button>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*">
+        <canvas id="canvas" class="hidden-canvas"></canvas>
+
+        <div id="resultsContainer" style="display: none;">
+            <div class="color-info">
+                <div class="color-info-label">HEX Code:</div>
+                <div class="hex-value" id="hexValue">#000000</div>
+            </div>
+
+            <div id="rgbMode">
+                <div class="info-box">
+                    <div class="info-title">📊 RGB वैल्यूज़</div>
+                    <div class="rgb-display">
+                        <div class="rgb-value">
+                            <div style="color: #e74c3c;">लाल</div>
+                            <div class="rgb-red" id="redValue">0</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #27ae60;">हरा</div>
+                            <div class="rgb-green" id="greenValue">0</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #3498db;">नीला</div>
+                            <div class="rgb-blue" id="blueValue">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title">🎯 रंगों का मिश्रण (RGB)</div>
+                    <div class="decomposition">
+                        <div class="decomp-item">
+                            <div class="decomp-label">लाल</div>
+                            <div class="decomp-percentage" id="redPercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="redBar" style="width: 0%; background: #e74c3c;"></div>
+                            </div>
+                        </div>
+                        <div class="decomp-item">
+                            <div class="decomp-label">हरा</div>
+                            <div class="decomp-percentage" id="greenPercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="greenBar" style="width: 0%; background: #27ae60;"></div>
+                            </div>
+                        </div>
+                        <div class="decomp-item">
+                            <div class="decomp-label">नीला</div>
+                            <div class="decomp-percentage" id="bluePercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="blueBar" style="width: 0%; background: #3498db;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="total-percentage">
+                        कुल: <span id="totalPercent">0%</span> ✓
+                    </div>
+                </div>
+            </div>
+
+            <div id="rybMode" style="display: none;">
+                <div class="info-box">
+                    <div class="info-title">🎨 RYB वैल्यूज़ (Traditional Painting)</div>
+                    <div class="rgb-display">
+                        <div class="rgb-value">
+                            <div style="color: #e74c3c;">लाल</div>
+                            <div class="rgb-red" id="rybRed">0</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #f39c12;">पीला</div>
+                            <div class="rgb-yellow" id="rybYellow">0</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #3498db;">नीला</div>
+                            <div class="rgb-blue" id="rybBlue">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title">🎯 रंगों का मिश्रण (RYB)</div>
+                    <div class="decomposition">
+                        <div class="decomp-item">
+                            <div class="decomp-label">लाल</div>
+                            <div class="decomp-percentage" id="rybRedPercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="rybRedBar" style="width: 0%; background: #e74c3c;"></div>
+                            </div>
+                        </div>
+                        <div class="decomp-item">
+                            <div class="decomp-label">पीला</div>
+                            <div class="decomp-percentage" id="rybYellowPercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="rybYellowBar" style="width: 0%; background: #f39c12;"></div>
+                            </div>
+                        </div>
+                        <div class="decomp-item">
+                            <div class="decomp-label">नीला</div>
+                            <div class="decomp-percentage" id="rybBluePercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="rybBlueBar" style="width: 0%; background: #3498db;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="total-percentage">
+                        कुल: <span id="rybTotalPercent">0%</span> ✓
+                    </div>
+                </div>
+            </div>
+
+            <div id="hslMode" style="display: none;">
+                <div class="info-box">
+                    <div class="info-title">🌈 HSL वैल्यूज़ (Design Mode)</div>
+                    <div class="rgb-display">
+                        <div class="rgb-value">
+                            <div style="color: #667eea;">Hue</div>
+                            <div class="hsl-hue" id="hslHue">0°</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #16a085;">Saturation</div>
+                            <div class="hsl-sat" id="hslSat">0%</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #555;">Lightness</div>
+                            <div class="hsl-light" id="hslLight">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="combination-result">
+                <div class="combination-text" id="combinationText">
+                    Loading...
+                </div>
+                <div class="color-boxes">
+                    <div class="small-color-box" id="color1"></div>
+                    <div style="display: flex; align-items: center; color: white; font-weight: bold;">+</div>
+                    <div class="small-color-box" id="color2"></div>
+                    <div style="display: flex; align-items: center; color: white; font-weight: bold;">=</div>
+                    <div class="small-color-box" id="color3"></div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="openSaveColorModal()" title="Save Color">💾 Save</button>
+                <button class="action-btn" onclick="openPaletteModal()" title="Palette Builder">🎨 Palette</button>
+                <button class="action-btn" onclick="openHarmonyModal()" title="Color Harmony">🔍 Harmony</button>
+                <button class="action-btn" onclick="openExportModal()" title="Export">📱 Export</button>
+                <button class="action-btn" onclick="openPaintMatchModal()" title="Paint Brands">🛒 Paint</button>
+                <button class="action-btn" onclick="showSavedColors()" title="My Colors">⭐ My Colors</button>
+            </div>
+
+            <div id="savedColorsSection" style="display: none; margin-top: 20px;">
+                <div class="info-title">⭐ Saved Colors (<span id="savedCount">0</span>)</div>
+                <div class="saved-colors-preview" id="savedColorsPreview"></div>
+            </div>
+        </div>
+
+        <div id="loadingDiv" class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">रंग की पहचान कर रहे हैं...</p>
+        </div>
+    </div>
+
+    <div id="liveCameraScreen">
+        <div class="live-camera-container">
+            <div class="live-header">
+                <div class="live-rgb-display">
+                    <span>🔴 R: <strong id="liveR">0</strong></span>
+                    <span>🟢 G: <strong id="liveG">0</strong></span>
+                    <span>🔵 B: <strong id="liveB">0</strong></span>
+                </div>
+            </div>
+            <video id="liveCameraVideo" class="live-video"></video>
+            <canvas id="liveCameraCanvas" style="display: none;"></canvas>
+            <div class="crosshair-overlay" id="crosshairOverlay">
+                <div class="crosshair-center">
+                    <div class="crosshair-circle"></div>
+                    <div class="crosshair-h"></div>
+                    <div class="crosshair-v"></div>
+                </div>
+                <div class="live-color-preview" id="liveColorPreview"></div>
+            </div>
+            <div class="live-camera-buttons">
+                <button class="picker-btn picker-btn-select" onclick="confirmLiveColor()">✓ चुनें</button>
+                <button class="picker-btn picker-btn-cancel" onclick="cancelLiveCamera()">✕ रद्द करें</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="photoPickerScreen">
+        <div class="photo-container">
+            <div class="picker-info">👆 रंग चुनने के लिए tap करें</div>
+            <img id="selectedImage" src="" alt="Photo">
+            <div class="color-cursor" id="colorCursor"></div>
+            <div class="picker-buttons">
+                <button class="picker-btn picker-btn-select" onclick="selectPickedColor()">✓ चुनें</button>
+                <button class="picker-btn picker-btn-cancel" onclick="cancelPhotoPicker()">✕ रद्द करें</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <div id="saveColorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">💾 Save This Color</div>
+            <div id="saveColorPreview" style="width: 100%; height: 80px; border-radius: 10px; margin-bottom: 15px; border: 2px solid #ddd;"></div>
+            <div class="form-group">
+                <label class="form-label">Color Name (Optional)</label>
+                <input type="text" id="colorName" class="form-input" placeholder="e.g., Sunset Orange">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Select Palette</label>
+                <div id="paletteSelectList" class="palette-list"></div>
+                <input type="text" id="newPaletteName" class="form-input" placeholder="Or create new palette...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (Optional)</label>
+                <textarea id="colorNotes" class="form-input" style="resize: vertical; min-height: 60px;" placeholder="Found in flower petals..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('saveColorModal')">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="saveColor()">Save Color</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paletteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🎨 My Palettes</div>
+            <div id="palettesList" class="palette-list" style="max-height: 400px;"></div>
+            <button class="modal-btn modal-btn-confirm" style="width: 100%; margin-top: 15px;" onclick="createNewPalette()">+ Create New Palette</button>
+            <div class="modal-buttons" style="margin-top: 15px;">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('paletteModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="harmonyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🔍 Color Harmony</div>
+            <div id="baseColorHarmony" style="margin-bottom: 15px;">
+                <small style="color: #666;">Base Color:</small>
+                <div id="harmonyBaseBox" style="width: 100%; height: 60px; border-radius: 10px; border: 2px solid #ddd; margin-top: 8px;"></div>
+            </div>
+            <div id="harmonyResults"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('harmonyModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paintMatchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🛒 Paint Brand Matching</div>
+            <div id="paintMatches"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('paintMatchModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">📱 Export Color</div>
+            <div class="form-group">
+                <label class="form-label">Select Format:</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="exportJSON" checked> JSON
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="exportCSV"> CSV
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Include:</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="includeRGB" checked> RGB
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="includeHex" checked> HEX
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="includeRYB" checked> RYB
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="includeHSL" checked> HSL
+                    </label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('exportModal')">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="exportColor()">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">⚙️ Settings</div>
+            <div class="form-group">
+                <label class="form-label">Language / भाषा</label>
+                <div class="language-selector">
+                    <button class="lang-btn active" onclick="changeLanguage('en')">🇬🇧 English</button>
+                    <button class="lang-btn" onclick="changeLanguage('hi')">🇮🇳 हिंदी</button>
+                    <button class="lang-btn" onclick="changeLanguage('mr')">🇮🇳 मराठी</button>
+                    <button class="lang-btn" onclick="changeLanguage('gu')">🇮🇳 ગુજરાતી</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">App Info</label>
+                <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; font-size: 13px;">
+                    <div>📦 Version: 4.1.0</div>
+                    <div>💾 Saved Colors: <span id="statsColors">0</span></div>
+                    <div>📚 Saved Palettes: <span id="statsPalettes">0</span></div>
+                </div>
+            </div>
+            <button class="modal-btn modal-btn-cancel" style="width: 100%; margin-top: 15px;" onclick="clearAllData()">🗑️ Clear All Data</button>
+            <div class="modal-buttons" style="margin-top: 10px;">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('settingsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'rgb';
+        let currentImageData = null;
+        let selectedR = 0, selectedG = 0, selectedB = 0;
+        let currentLanguage = 'hi';
+        let savedColors = [];
+        let savedPalettes = [];
+
+        const STANDARD_COLORS = {
+            'Red': { r: 255, g: 0, b: 0 },
+            'Green': { r: 0, g: 255, b: 0 },
+            'Blue': { r: 0, g: 0, b: 255 },
+            'Yellow': { r: 255, g: 255, b: 0 },
+            'Cyan': { r: 0, g: 255, b: 255 },
+            'Magenta': { r: 255, g: 0, b: 255 },
+            'White': { r: 255, g: 255, b: 255 },
+            'Black': { r: 0, g: 0, b: 0 },
+            'Orange': { r: 255, g: 165, b: 0 },
+            'Pink': { r: 255, g: 192, b: 203 },
+            'Purple': { r: 128, g: 0, b: 128 },
+            'Brown': { r: 165, g: 42, b: 42 },
+            'Gray': { r: 128, g: 128, b: 128 }
+        };
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('rgbMode').style.display = mode === 'rgb' ? 'block' : 'none';
+            document.getElementById('rybMode').style.display = mode === 'ryb' ? 'block' : 'none';
+            document.getElementById('hslMode').style.display = mode === 'hsl' ? 'block' : 'none';
+        }
+
+        let liveCameraStream = null;
+        let liveColorUpdateInterval = null;
+        let liveLabeledR = 0, liveLabeledG = 0, liveLabeledB = 0;
+
+        function openLiveCamera() {
+            const video = document.getElementById('liveCameraVideo');
+            
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            }).then(stream => {
+                liveCameraStream = stream;
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    document.getElementById('liveCameraScreen').classList.add('active');
+                    startLiveColorSampling();
+                };
+            }).catch(err => {
+                showError('🚫 कैमरा एक्सेस नहीं मिला।\n\nChrome Settings में जाइए:\n1. ⋮ (तीन dots)\n2. Settings\n3. Privacy → Camera\n4. अपनी site को Allow करें\n\nफिर दोबारा कोशिश करें ✓');
+            });
+        }
+
+        function startLiveColorSampling() {
+            const video = document.getElementById('liveCameraVideo');
+            const canvas = document.getElementById('liveCameraCanvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            liveColorUpdateInterval = setInterval(() => {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const centerX = Math.floor(canvas.width / 2);
+                const centerY = Math.floor(canvas.height / 2);
+                
+                const imageData = ctx.getImageData(centerX, centerY, 1, 1);
+                const data = imageData.data;
+                
+                liveLabeledR = data[0];
+                liveLabeledG = data[1];
+                liveLabeledB = data[2];
+
+                document.getElementById('liveR').textContent = liveLabeledR;
+                document.getElementById('liveG').textContent = liveLabeledG;
+                document.getElementById('liveB').textContent = liveLabeledB;
+
+                const hex = '#' + [liveLabeledR, liveLabeledG, liveLabeledB].map(x => {
+                    const h = x.toString(16);
+                    return h.length === 1 ? '0' + h : h;
+                }).join('').toUpperCase();
+
+                document.getElementById('liveColorPreview').style.backgroundColor = `rgb(${liveLabeledR}, ${liveLabeledG}, ${liveLabeledB})`;
+            }, 100);
+        }
+
+        function confirmLiveColor() {
+            selectedR = liveLabeledR;
+            selectedG = liveLabeledG;
+            selectedB = liveLabeledB;
+            cancelLiveCamera();
+            displayResults(selectedR, selectedG, selectedB);
+        }
+
+        function cancelLiveCamera() {
+            if (liveCameraStream) {
+                liveCameraStream.getTracks().forEach(track => track.stop());
+                liveCameraStream = null;
+            }
+            if (liveColorUpdateInterval) {
+                clearInterval(liveColorUpdateInterval);
+            }
+            document.getElementById('liveCameraScreen').classList.remove('active');
+        }
+
+        function openGallery() {
+            const input = document.getElementById('fileInput');
+            input.removeAttribute('capture');
+            input.click();
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processImage(file);
+            }
+        });
+
+        function processImage(file) {
+            document.getElementById('loadingDiv').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    document.getElementById('selectedImage').src = event.target.result;
+                    
+                    const canvas = document.getElementById('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    currentImageData = ctx.getImageData(0, 0, img.width, img.height);
+                    
+                    document.getElementById('loadingDiv').style.display = 'none';
+                    showPhotoPicker();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showPhotoPicker() {
+            document.getElementById('photoPickerScreen').classList.add('active');
+            const img = document.getElementById('selectedImage');
+            
+            img.addEventListener('mousemove', updateColorCursor);
+            img.addEventListener('touchmove', updateColorCursor);
+        }
+
+        function cancelPhotoPicker() {
+            document.getElementById('photoPickerScreen').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+            currentImageData = null;
+        }
+
+        function updateColorCursor(e) {
+            const img = document.getElementById('selectedImage');
+            const cursor = document.getElementById('colorCursor');
+            
+            let x, y;
+            if (e.touches) {
+                const rect = img.getBoundingClientRect();
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.offsetX;
+                y = e.offsetY;
+            }
+
+            cursor.style.left = (x - 25) + 'px';
+            cursor.style.top = (y - 25) + 'px';
+            cursor.style.display = 'block';
+
+            if (currentImageData) {
+                const imageWidth = document.getElementById('selectedImage').naturalWidth;
+                const imageHeight = document.getElementById('selectedImage').naturalHeight;
+                const displayWidth = img.width;
+                const displayHeight = img.height;
+                
+                const actualX = Math.round((x / displayWidth) * imageWidth);
+                const actualY = Math.round((y / displayHeight) * imageHeight);
+                
+                const index = (actualY * imageWidth + actualX) * 4;
+                const data = currentImageData.data;
+                
+                selectedR = data[index];
+                selectedG = data[index + 1];
+                selectedB = data[index + 2];
+            }
+        }
+
+        function selectPickedColor() {
+            displayResults(selectedR, selectedG, selectedB);
+            cancelPhotoPicker();
+        }
+
+        function rgbToRyb(r, g, b) {
+            r = r / 255;
+            g = g / 255;
+            b = b / 255;
+
+            let w = Math.min(r, g, b);
+            r -= w;
+            g -= w;
+            b -= w;
+
+            let maxRGB = Math.max(r, g, b);
+            
+            let ry, ry_g;
+            if (g !== 0 && b !== 0) {
+                ry_g = g / b;
+            } else {
+                ry_g = 0;
+            }
+
+            if (b !== 0 && r !== 0) {
+                ry = r / b;
+            } else {
+                ry = 0;
+            }
+
+            let rybR = maxRGB;
+            let rybY = maxRGB * ry_g;
+            let rybB = maxRGB * (1 - ry);
+
+            rybR = Math.round(rybR * 255);
+            rybY = Math.round(rybY * 255);
+            rybB = Math.round(rybB * 255);
+
+            return { r: rybR, y: rybY, b: rybB };
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+
+            return {
+                h: Math.round(h * 360),
+                s: Math.round(s * 100),
+                l: Math.round(l * 100)
+            };
+        }
+
+        function displayResults(r, g, b) {
+            const colorHex = `rgb(${r}, ${g}, ${b})`;
+            const preview = document.getElementById('colorPreview');
+            preview.style.backgroundColor = colorHex;
+            preview.classList.add('active');
+
+            const hex = '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('').toUpperCase();
+            document.getElementById('hexValue').textContent = hex;
+
+            document.getElementById('redValue').textContent = r;
+            document.getElementById('greenValue').textContent = g;
+            document.getElementById('blueValue').textContent = b;
+
+            const totalRGB = r + g + b;
+            let redPct = 0, greenPct = 0, bluePct = 0;
+            
+            if (totalRGB > 0) {
+                redPct = Math.round((r / totalRGB) * 100);
+                greenPct = Math.round((g / totalRGB) * 100);
+                bluePct = Math.round((b / totalRGB) * 100);
+
+                const total = redPct + greenPct + bluePct;
+                if (total !== 100) {
+                    if (redPct >= greenPct && redPct >= bluePct) {
+                        redPct += (100 - total);
+                    } else if (greenPct >= redPct && greenPct >= bluePct) {
+                        greenPct += (100 - total);
+                    } else {
+                        bluePct += (100 - total);
+                    }
+                }
+            }
+
+            document.getElementById('redPercent').textContent = redPct + '%';
+            document.getElementById('greenPercent').textContent = greenPct + '%';
+            document.getElementById('bluePercent').textContent = bluePct + '%';
+
+            document.getElementById('redBar').style.width = redPct + '%';
+            document.getElementById('greenBar').style.width = greenPct + '%';
+            document.getElementById('blueBar').style.width = bluePct + '%';
+
+            document.getElementById('totalPercent').textContent = (redPct + greenPct + bluePct) + '%';
+
+            const ryb = rgbToRyb(r, g, b);
+            document.getElementById('rybRed').textContent = ryb.r;
+            document.getElementById('rybYellow').textContent = ryb.y;
+            document.getElementById('rybBlue').textContent = ryb.b;
+
+            const totalRYB = ryb.r + ryb.y + ryb.b;
+            let rybRedPct = 0, rybYellowPct = 0, rybBluePct = 0;
+            
+            if (totalRYB > 0) {
+                rybRedPct = Math.round((ryb.r / totalRYB) * 100);
+                rybYellowPct = Math.round((ryb.y / totalRYB) * 100);
+                rybBluePct = Math.round((ryb.b / totalRYB) * 100);
+
+                const total = rybRedPct + rybYellowPct + rybBluePct;
+                if (total !== 100) {
+                    if (rybRedPct >= rybYellowPct && rybRedPct >= rybBluePct) {
+                        rybRedPct += (100 - total);
+                    } else if (rybYellowPct >= rybRedPct && rybYellowPct >= rybBluePct) {
+                        rybYellowPct += (100 - total);
+                    } else {
+                        rybBluePct += (100 - total);
+                    }
+                }
+            }
+
+            document.getElementById('rybRedPercent').textContent = rybRedPct + '%';
+            document.getElementById('rybYellowPercent').textContent = rybYellowPct + '%';
+            document.getElementById('rybBluePercent').textContent = rybBluePct + '%';
+
+            document.getElementById('rybRedBar').style.width = rybRedPct + '%';
+            document.getElementById('rybYellowBar').style.width = rybYellowPct + '%';
+            document.getElementById('rybBlueBar').style.width = rybBluePct + '%';
+
+            document.getElementById('rybTotalPercent').textContent = (rybRedPct + rybYellowPct + rybBluePct) + '%';
+
+            const hsl = rgbToHsl(r, g, b);
+            document.getElementById('hslHue').textContent = hsl.h + '°';
+            document.getElementById('hslSat').textContent = hsl.s + '%';
+            document.getElementById('hslLight').textContent = hsl.l + '%';
+
+            const combination = findColorCombination(r, g, b);
+            
+            document.getElementById('color1').style.backgroundColor = `rgb(${combination.color1.r}, ${combination.color1.g}, ${combination.color1.b})`;
+            document.getElementById('color2').style.backgroundColor = `rgb(${combination.color2.r}, ${combination.color2.g}, ${combination.color2.b})`;
+            document.getElementById('color3').style.backgroundColor = colorHex;
+
+            document.getElementById('combinationText').textContent = 
+                `${combination.name1} + ${combination.name2}`;
+
+            document.getElementById('resultsContainer').style.display = 'block';
+            showSuccessMessage(`रंग की पहचान हुई! 🎨`);
+        }
+
+        function findColorCombination(r, g, b) {
+            let bestMatch = null;
+            let bestDistance = Infinity;
+
+            for (let color1Name in STANDARD_COLORS) {
+                for (let color2Name in STANDARD_COLORS) {
+                    if (color1Name >= color2Name) continue;
+                    
+                    const c1 = STANDARD_COLORS[color1Name];
+                    const c2 = STANDARD_COLORS[color2Name];
+                    
+                    const mixedR = Math.round((c1.r + c2.r) / 2);
+                    const mixedG = Math.round((c1.g + c2.g) / 2);
+                    const mixedB = Math.round((c1.b + c2.b) / 2);
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(r - mixedR, 2) +
+                        Math.pow(g - mixedG, 2) +
+                        Math.pow(b - mixedB, 2)
+                    );
+                    
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestMatch = {
+                            name1: color1Name,
+                            color1: c1,
+                            name2: color2Name,
+                            color2: c2
+                        };
+                    }
+                }
+            }
+
+            return bestMatch || {
+                name1: 'Red',
+                color1: STANDARD_COLORS.Red,
+                name2: 'Blue',
+                color2: STANDARD_COLORS.Blue
+            };
+        }
+
+        function resetApp() {
+            document.getElementById('colorPreview').style.backgroundColor = '#f0f0f0';
+            document.getElementById('colorPreview').classList.remove('active');
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('successMsg').style.display = 'none';
+            document.getElementById('savedColorsSection').style.display = 'none';
+            currentImageData = null;
+        }
+
+        function showSuccessMessage(msg) {
+            const successDiv = document.getElementById('successMsg');
+            successDiv.textContent = msg;
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openSaveColorModal() {
+            if (!selectedR && !selectedG && !selectedB) {
+                showError('Please detect a color first!');
+                return;
+            }
+            const hex = '#' + [selectedR, selectedG, selectedB].map(x => {
+                const h = x.toString(16);
+                return h.length === 1 ? '0' + h : h;
+            }).join('').toUpperCase();
+            document.getElementById('saveColorPreview').style.backgroundColor = hex;
+            renderPaletteList();
+            openModal('saveColorModal');
+        }
+
+        function renderPaletteList() {
+            const list = document.getElementById('paletteSelectList');
+            list.innerHTML = '';
+            if (savedPalettes.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 15px; color: #999;">No palettes yet. Create one!</div>';
+                return;
+            }
+            savedPalettes.forEach((palette, idx) => {
+                const div = document.createElement('div');
+                div.className = 'palette-item';
+                div.innerHTML = `<strong>${palette.name}</strong> (${palette.colors.length} colors)`;
+                div.onclick = () => {
+                    document.querySelectorAll('.palette-item').forEach(p => p.classList.remove('selected'));
+                    div.classList.add('selected');
+                };
+                list.appendChild(div);
+            });
+        }
+
+        function saveColor() {
+            const name = document.getElementById('colorName').value || `Color ${savedColors.length + 1}`;
+            const notes = document.getElementById('colorNotes').value;
+            const paletteSearch = document.getElementById('newPaletteName').value;
+            
+            const selectedPaletteDiv = document.querySelector('.palette-item.selected');
+            let selectedPaletteId = null;
+            
+            if (selectedPaletteDiv) {
+                const paletteName = selectedPaletteDiv.querySelector('strong').textContent;
+                const palette = savedPalettes.find(p => p.name === paletteName);
+                selectedPaletteId = palette?.id || null;
+            }
+            
+            if (paletteSearch && !selectedPaletteId) {
+                let palette = savedPalettes.find(p => p.name.toLowerCase() === paletteSearch.toLowerCase());
+                if (!palette) {
+                    palette = { id: 'pal_' + Date.now(), name: paletteSearch, colors: [] };
+                    savedPalettes.push(palette);
+                }
+                selectedPaletteId = palette.id;
+            }
+            
+            const color = {
+                id: 'col_' + Date.now(),
+                name: name,
+                r: selectedR,
+                g: selectedG,
+                b: selectedB,
+                hex: '#' + [selectedR, selectedG, selectedB].map(x => {
+                    const h = x.toString(16);
+                    return h.length === 1 ? '0' + h : h;
+                }).join('').toUpperCase(),
+                notes: notes,
+                paletteId: selectedPaletteId,
+                savedAt: new Date().toLocaleString()
+            };
+            
+            savedColors.push(color);
+            
+            if (selectedPaletteId) {
+                const palette = savedPalettes.find(p => p.id === selectedPaletteId);
+                if (palette && !palette.colors.includes(color.id)) {
+                    palette.colors.push(color.id);
+                }
+            }
+            
+            localStorage.setItem('savedColors', JSON.stringify(savedColors));
+            localStorage.setItem('savedPalettes', JSON.stringify(savedPalettes));
+            
+            closeModal('saveColorModal');
+            document.getElementById('colorName').value = '';
+            document.getElementById('colorNotes').value = '';
+            document.getElementById('newPaletteName').value = '';
+            showSuccessMessage('✅ Color saved to palette!');
+            updateSavedColorsDisplay();
+        }
+
+        function openPaletteModal() {
+            renderPaletteList();
+            const list = document.getElementById('palettesList');
+            list.innerHTML = '';
+            if (savedPalettes.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 15px; color: #999;">No palettes yet. Create one!</div>';
+                openModal('paletteModal');
+                return;
+            }
+            savedPalettes.forEach(palette => {
+                const colorsInPalette = savedColors.filter(c => c.paletteId === palette.id);
+                const colorCount = colorsInPalette.length;
+                
+                const div = document.createElement('div');
+                div.className = 'palette-item';
+                div.style.padding = '12px';
+                
+                const colorBoxes = colorsInPalette.map(color => 
+                    `<div class="palette-color-swatch" style="background: rgb(${color.r}, ${color.g}, ${color.b});" title="${color.name}"></div>`
+                ).join('');
+                
+                const swatchesHTML = colorBoxes ? `<div class="palette-colors">${colorBoxes}</div>` : '<div style="color: #999; font-size: 12px; margin-top: 8px;">No colors yet</div>';
+                
+                div.innerHTML = `<strong>${palette.name}</strong> (${colorCount} colors)${swatchesHTML}`;
+                div.style.cursor = 'pointer';
+                div.onclick = () => viewPaletteDetail(palette, colorsInPalette);
+                list.appendChild(div);
+            });
+            openModal('paletteModal');
+        }
+
+        function createNewPalette() {
+            const name = prompt('Enter palette name:');
+            if (name) {
+                const palette = { id: 'pal_' + Date.now(), name: name, colors: [] };
+                savedPalettes.push(palette);
+                localStorage.setItem('savedPalettes', JSON.stringify(savedPalettes));
+                showSuccessMessage('✅ Palette created!');
+                openPaletteModal();
+            }
+        }
+
+        function viewPaletteDetail(palette, colorsInPalette) {
+            closeModal('paletteModal');
+            
+            let html = `
+                <div class="modal-content">
+                    <div class="modal-title">${palette.name} (${colorsInPalette.length} colors)</div>
+                    <div style="margin-bottom: 20px;">
+                        <div class="saved-colors-preview" style="gap: 12px; justify-content: center;">
+            `;
+            
+            if (colorsInPalette.length === 0) {
+                html += '<div style="color: #999; text-align: center; padding: 20px; width: 100%;">No colors in this palette yet</div>';
+            } else {
+                colorsInPalette.forEach(color => {
+                    html += `
+                        <div style="text-align: center;">
+                            <div class="saved-color-chip" style="background: rgb(${color.r}, ${color.g}, ${color.b}); width: 60px; height: 60px; margin: 0 auto;" title="${color.name}"></div>
+                            <small style="display: block; margin-top: 5px; color: #333; font-weight: bold;">${color.name}</small>
+                            <small style="display: block; color: #999;">${color.hex}</small>
+                            <button style="margin-top: 5px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; background: #fee; color: #c33; cursor: pointer; font-size: 11px; font-weight: bold;" onclick="deletePaletteColor('${palette.id}', '${color.id}')">Delete</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                    <button class="modal-btn modal-btn-cancel" style="width: 100%;" onclick="closeDetailModal(); openPaletteModal();">⬅️ Back</button>
+                </div>
+            `;
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.id = 'paletteDetailModal';
+            tempDiv.className = 'modal active';
+            tempDiv.innerHTML = html;
+            tempDiv.onclick = (e) => {
+                if (e.target === tempDiv) {
+                    closeDetailModal();
+                    openPaletteModal();
+                }
+            };
+            document.body.appendChild(tempDiv);
+        }
+        
+        function closeDetailModal() {
+            const detailModal = document.getElementById('paletteDetailModal');
+            if (detailModal) {
+                detailModal.remove();
+            }
+        }
+        
+        function deletePaletteColor(paletteId, colorId) {
+            if (confirm('Remove this color from palette?')) {
+                const palette = savedPalettes.find(p => p.id === paletteId);
+                if (palette) {
+                    palette.colors = palette.colors.filter(c => c !== colorId);
+                    localStorage.setItem('savedPalettes', JSON.stringify(savedPalettes));
+                    showSuccessMessage('✅ Color removed from palette!');
+                    setTimeout(() => {
+                        closeDetailModal();
+                        openPaletteModal();
+                    }, 300);
+                }
+            }
+        }
+
+        function openHarmonyModal() {
+            if (!selectedR && !selectedG && !selectedB) {
+                showError('Please detect a color first!');
+                return;
+            }
+            const hex = '#' + [selectedR, selectedG, selectedB].map(x => {
+                const h = x.toString(16);
+                return h.length === 1 ? '0' + h : h;
+            }).join('').toUpperCase();
+            document.getElementById('harmonyBaseBox').style.backgroundColor = hex;
+            
+            const harmonies = calculateHarmony(selectedR, selectedG, selectedB);
+            const results = document.getElementById('harmonyResults');
+            results.innerHTML = `
+                <div class="harmony-card">
+                    <div class="harmony-title">🔴 Complementary (विपरीत)</div>
+                    <div class="harmony-colors">
+                        <div class="harmony-color">
+                            <div class="harmony-box" style="background: ${hex};"></div>
+                            <div class="harmony-code">${hex}</div>
+                        </div>
+                        <div class="harmony-color">
+                            <div class="harmony-box" style="background: rgb(${harmonies.complementary.r}, ${harmonies.complementary.g}, ${harmonies.complementary.b});"></div>
+                            <div class="harmony-code">#${((1 << 24) + (harmonies.complementary.r << 16) + (harmonies.complementary.g << 8) + harmonies.complementary.b).toString(16).slice(1).toUpperCase()}</div>
+                        </div>
+                    </div>
+                    <small style="color: #666;">✓ Creates high contrast</small>
+                </div>
+                <div class="harmony-card">
+                    <div class="harmony-title">🟡 Analogous (पास-पड़ोस)</div>
+                    <div class="harmony-colors">
+                        <div class="harmony-color" style="font-size: 11px;">
+                            <div class="harmony-box" style="background: rgb(${harmonies.analogous1.r}, ${harmonies.analogous1.g}, ${harmonies.analogous1.b});"></div>
+                            <div class="harmony-code">#${((1 << 24) + (harmonies.analogous1.r << 16) + (harmonies.analogous1.g << 8) + harmonies.analogous1.b).toString(16).slice(1).toUpperCase()}</div>
+                        </div>
+                        <div class="harmony-color" style="font-size: 11px;">
+                            <div class="harmony-box" style="background: ${hex};"></div>
+                            <div class="harmony-code">${hex}</div>
+                        </div>
+                        <div class="harmony-color" style="font-size: 11px;">
+                            <div class="harmony-box" style="background: rgb(${harmonies.analogous2.r}, ${harmonies.analogous2.g}, ${harmonies.analogous2.b});"></div>
+                            <div class="harmony-code">#${((1 << 24) + (harmonies.analogous2.r << 16) + (harmonies.analogous2.g << 8) + harmonies.analogous2.b).toString(16).slice(1).toUpperCase()}</div>
+                        </div>
+                    </div>
+                    <small style="color: #666;">✓ Harmonious & balanced</small>
+                </div>
+                <div class="harmony-card">
+                    <div class="harmony-title">🟣 Triadic (त्रिकोण)</div>
+                    <div class="harmony-colors">
+                        <div class="harmony-color" style="font-size: 11px;">
+                            <div class="harmony-box" style="background: ${hex};"></div>
+                            <div class="harmony-code">${hex}</div>
+                        </div>
+                        <div class="harmony-color" style="font-size: 11px;">
+                            <div class="harmony-box" style="background: rgb(${harmonies.triadic1.r}, ${harmonies.triadic1.g}, ${harmonies.triadic1.b});"></div>
+                            <div class="harmony-code">#${((1 << 24) + (harmonies.triadic1.r << 16) + (harmonies.triadic1.g << 8) + harmonies.triadic1.b).toString(16).slice(1).toUpperCase()}</div>
+                        </div>
+                        <div class="harmony-color" style="font-size: 11px;">
+                            <div class="harmony-box" style="background: rgb(${harmonies.triadic2.r}, ${harmonies.triadic2.g}, ${harmonies.triadic2.b});"></div>
+                            <div class="harmony-code">#${((1 << 24) + (harmonies.triadic2.r << 16) + (harmonies.triadic2.g << 8) + harmonies.triadic2.b).toString(16).slice(1).toUpperCase()}</div>
+                        </div>
+                    </div>
+                    <small style="color: #666;">✓ Vibrant & bold</small>
+                </div>
+            `;
+            openModal('harmonyModal');
+        }
+
+        function calculateHarmony(r, g, b) {
+            const hsl = rgbToHsl(r, g, b);
+            const h = hsl.h;
+            
+            const comp = hslToRgb((h + 180) % 360, hsl.s, hsl.l);
+            const ana1 = hslToRgb((h + 30) % 360, hsl.s, hsl.l);
+            const ana2 = hslToRgb((h - 30 + 360) % 360, hsl.s, hsl.l);
+            const tri1 = hslToRgb((h + 120) % 360, hsl.s, hsl.l);
+            const tri2 = hslToRgb((h + 240) % 360, hsl.s, hsl.l);
+            
+            return {
+                complementary: comp,
+                analogous1: ana1,
+                analogous2: ana2,
+                triadic1: tri1,
+                triadic2: tri2
+            };
+        }
+
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        const PAINT_BRANDS = {
+            'Camlin': [
+                {name: 'Burnt Orange', r: 255, g: 92, b: 51, code: 'CO-247', price: 45},
+                {name: 'Crimson Red', r: 220, g: 20, b: 60, code: 'CR-101', price: 45},
+                {name: 'Forest Green', r: 34, g: 139, b: 34, code: 'FG-156', price: 45},
+                {name: 'Sky Blue', r: 100, g: 150, b: 255, code: 'SB-203', price: 45},
+                {name: 'Golden Yellow', r: 255, g: 215, b: 0, code: 'GY-178', price: 45}
+            ],
+            'Kokuyo': [
+                {name: 'Coral Red', r: 255, g: 99, b: 71, code: 'KKY-101', price: 52},
+                {name: 'Emerald Green', r: 80, g: 200, b: 120, code: 'KKY-205', price: 52},
+                {name: 'Ocean Blue', r: 0, g: 119, b: 182, code: 'KKY-309', price: 52},
+                {name: 'Sunset Orange', r: 255, g: 140, b: 0, code: 'KKY-412', price: 52}
+            ],
+            'Faber-Castell': [
+                {name: 'Scarlet Red', r: 255, g: 52, b: 52, code: 'FC-018', price: 65},
+                {name: 'Leaf Green', r: 60, g: 180, b: 75, code: 'FC-224', price: 65},
+                {name: 'Royal Blue', r: 65, g: 105, b: 225, code: 'FC-331', price: 65},
+                {name: 'Sunflower', r: 255, g: 220, b: 0, code: 'FC-407', price: 65}
+            ]
+        };
+
+        function openPaintMatchModal() {
+            if (!selectedR && !selectedG && !selectedB) {
+                showError('Please detect a color first!');
+                return;
+            }
+            
+            let allPaints = [];
+            for (const brand in PAINT_BRANDS) {
+                PAINT_BRANDS[brand].forEach(paint => {
+                    const distance = Math.sqrt(
+                        Math.pow(selectedR - paint.r, 2) +
+                        Math.pow(selectedG - paint.g, 2) +
+                        Math.pow(selectedB - paint.b, 2)
+                    );
+                    const match = Math.max(0, 100 - (distance / 4.41));
+                    allPaints.push({ ...paint, brand, distance, match });
+                });
+            }
+            
+            allPaints.sort((a, b) => b.match - a.match);
+            const top3 = allPaints.slice(0, 3);
+            
+            const matches = document.getElementById('paintMatches');
+            matches.innerHTML = top3.map((paint, idx) => {
+                const badges = ['🥇', '🥈', '🥉'];
+                const badgeClass = paint.match > 95 ? 'paint-match-excellent' : paint.match > 90 ? 'paint-match-good' : 'paint-match-fair';
+                return `
+                    <div class="paint-brand-card">
+                        <div class="paint-match-badge ${badgeClass}">${badges[idx]} ${Math.round(paint.match)}% Match</div>
+                        <div><strong>${paint.brand} - ${paint.name}</strong></div>
+                        <div style="background: rgb(${paint.r}, ${paint.g}, ${paint.b}); height: 40px; border-radius: 6px; margin: 8px 0;"></div>
+                        <div style="font-size: 12px; color: #666;">
+                            <div>Code: ${paint.code}</div>
+                            <div>Price: ₹${paint.price}/tube</div>
+                            <div>Stock: ✅ In Stock</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            openModal('paintMatchModal');
+        }
+
+        function openExportModal() {
+            if (!selectedR && !selectedG && !selectedB) {
+                showError('Please detect a color first!');
+                return;
+            }
+            openModal('exportModal');
+        }
+
+        function exportColor() {
+            const hex = '#' + [selectedR, selectedG, selectedB].map(x => {
+                const h = x.toString(16);
+                return h.length === 1 ? '0' + h : h;
+            }).join('').toUpperCase();
+            
+            const ryb = rgbToRyb(selectedR, selectedG, selectedB);
+            const hsl = rgbToHsl(selectedR, selectedG, selectedB);
+            
+            const data = {
+                timestamp: new Date().toISOString(),
+                color: {
+                    name: 'Detected Color',
+                    rgb: selectedR && selectedG && selectedB ? {r: selectedR, g: selectedG, b: selectedB} : null,
+                    hex: hex,
+                    ryb: selectedR || selectedG || selectedB ? {r: ryb.r, y: ryb.y, b: ryb.b} : null,
+                    hsl: selectedR || selectedG || selectedB ? {h: hsl.h, s: hsl.s, l: hsl.l} : null
+                }
+            };
+            
+            const isJSON = document.getElementById('exportJSON').checked;
+            const isCSV = document.getElementById('exportCSV').checked;
+            
+            if (isJSON) {
+                const json = JSON.stringify(data, null, 2);
+                downloadFile(json, 'color_data.json', 'application/json');
+            }
+            if (isCSV) {
+                const csv = `Color,RGB,HEX,RYB,HSL\nDetected,RGB(${selectedR},${selectedG},${selectedB}),${hex},RYB(${ryb.r},${ryb.y},${ryb.b}),HSL(${hsl.h},${hsl.s},${hsl.l})`;
+                downloadFile(csv, 'color_data.csv', 'text/csv');
+            }
+            closeModal('exportModal');
+            showSuccessMessage('✅ File exported!');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        const translations = {
+            'en': {
+                subtitle: 'Detect colors - Learn how they are made',
+                camera: 'Camera',
+                gallery: 'Gallery',
+                reset: 'Reset'
+            },
+            'hi': {
+                subtitle: 'रंग की पहचान करें - किस तरह बना है',
+                camera: 'कैमरा',
+                gallery: 'गैलरी',
+                reset: 'रीसेट'
+            },
+            'mr': {
+                subtitle: 'रंग शोधा - कसे बनवले हे',
+                camera: 'कॅमेरा',
+                gallery: 'गॅलरी',
+                reset: 'रिसेट'
+            },
+            'gu': {
+                subtitle: 'રંગ શોધો - તે કેવી રીતે બને છે',
+                camera: 'કેમેરા',
+                gallery: 'ગ્યલેરી',
+                reset: 'રીસેટ'
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const trans = translations[lang] || translations['hi'];
+            document.getElementById('subtitle').textContent = trans.subtitle;
+            localStorage.setItem('selectedLanguage', lang);
+            showSuccessMessage('✅ Language changed!');
+        }
+
+        function openSettings() {
+            updateStatsDisplay();
+            openModal('settingsModal');
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('statsColors').textContent = savedColors.length;
+            document.getElementById('statsPalettes').textContent = savedPalettes.length;
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure? This will delete all saved colors and palettes!')) {
+                savedColors = [];
+                savedPalettes = [];
+                localStorage.removeItem('savedColors');
+                localStorage.removeItem('savedPalettes');
+                updateSavedColorsDisplay();
+                showSuccessMessage('✅ All data cleared!');
+                closeModal('settingsModal');
+            }
+        }
+
+        function showSavedColors() {
+            if (savedColors.length === 0) {
+                showError('No saved colors yet!');
+                return;
+            }
+            document.getElementById('savedColorsSection').style.display = 'block';
+            updateSavedColorsDisplay();
+        }
+
+        function updateSavedColorsDisplay() {
+            document.getElementById('savedCount').textContent = savedColors.length;
+            const preview = document.getElementById('savedColorsPreview');
+            preview.innerHTML = savedColors.map(color => `
+                <div class="saved-color-chip" style="background: rgb(${color.r}, ${color.g}, ${color.b});" title="${color.name}" onclick="loadColor('${color.id}')">
+                    <button class="delete-chip" onclick="deleteColor('${color.id}', event)">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function loadColor(colorId) {
+            const color = savedColors.find(c => c.id === colorId);
+            if (color) {
+                selectedR = color.r;
+                selectedG = color.g;
+                selectedB = color.b;
+                displayResults(color.r, color.g, color.b);
+                showSuccessMessage(`✅ Loaded: ${color.name}`);
+            }
+        }
+
+        function deleteColor(colorId, event) {
+            event.stopPropagation();
+            if (confirm('Delete this color?')) {
+                savedColors = savedColors.filter(c => c.id !== colorId);
+                localStorage.setItem('savedColors', JSON.stringify(savedColors));
+                updateSavedColorsDisplay();
+                showSuccessMessage('✅ Color deleted!');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            savedColors = JSON.parse(localStorage.getItem('savedColors')) || [];
+            savedPalettes = JSON.parse(localStorage.getItem('savedPalettes')) || [];
+            const savedLang = localStorage.getItem('selectedLanguage') || 'hi';
+            changeLanguage(savedLang);
+            updateStatsDisplay();
+        });
+    </script>
+
+    <footer>
+        <p>🎨 Colour Detective v4.1 (FULLY WORKING) ✅ | Artists के लिए</p>
+        <p>📸 Detect • 💾 Save • 🎨 Palette • 🔍 Harmony • 📱 Export • 🛒 Paint Match</p>
+    </footer>
+</body>
+</html>
