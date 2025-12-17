@@ -1,7 +1,7 @@
 {
   "name": "Colour Detective",
   "short_name": "ColourDetective",
-  "description": "Camera aur photo se color detect karke RGB, RYB, HSL, palettes, harmony aur paint matches dikhane वाला smart art tool.",
+  "description": "Camera aur photo se color detect karke RGB, RYB, HSL, palettes, harmony aur paint matches dikhane wala art & design tool.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
