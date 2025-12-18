@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colour Detective - रंग पहचानो</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 24px 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .color-preview {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 2px dashed #ddd;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .color-preview.active {
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 12px 16px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            padding: 10px 8px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .rgb-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .rgb-value {
+            background: white;
+            padding: 10px 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .rgb-red { color: #e74c3c; }
+        .rgb-green { color: #27ae60; }
+        .rgb-blue { color: #3498db; }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .action-btn {
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f9f9f9;
+            color: #333;
+        }
+
+        .action-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .modal-btn-confirm {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn-cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            color: #aaa;
+            font-size: 10px;
+            line-height: 1.5;
+            max-width: 480px;
+            border-top: 1px solid #eee;
+        }
+
+        #resultsContainer {
+            display: none;
+        }
+
+        #resultsContainer.show {
+            display: block;
+        }
+
+        .combination-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 10px;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .color-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 12px;
+            align-items: center;
+        }
+
+        .small-color-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            border: 2px solid white;
+        }
+
+        .color-info {
+            background: #e8f4f8;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border-left: 4px solid #3498db;
+        }
+
+        .hex-value {
+            font-family: monospace;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .decomposition {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .decomp-item {
+            background: white;
+            padding: 10px 8px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        .decomp-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .decomp-percentage {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .decomp-bar {
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .decomp-bar-fill {
+            height: 100%;
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .total-percentage {
+            background: #fff3cd;
+            color: #856404;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 11px;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .camera-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: black;
+            z-index: 3000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .camera-screen.active {
+            display: flex;
+        }
+
+        #cameraVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .color-picker-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2500;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .color-picker-overlay.active {
+            display: flex;
+        }
+
+        .picker-image-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 80vh;
+        }
+
+        #pickerImage {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .picker-crosshair {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 3px solid white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(255,255,255,0.6);
+        }
+
+        .camera-crosshair {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(255,255,255,0.9);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 3001;
+            box-shadow: 0 0 20px rgba(255,255,255,0.8);
+        }
+
+        .crosshair-h, .crosshair-v {
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+        }
+
+        .crosshair-h {
+            width: 120px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .crosshair-v {
+            width: 2px;
+            height: 120px;
+            top: 50%;
+            left: 50%;
+            transform: translateY(-50%);
+        }
+
+        .picker-info-box {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 2501;
+        }
+
+        .picker-color-display {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 2501;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .live-color-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 10px rgba(255,255,255,0.6);
+        }
+
+        .picker-buttons {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .palette-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .palette-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .palette-item:hover {
+            background: #f5f5f5;
+            border-color: #667eea;
+        }
+
+        .palette-item.selected {
+            background: #e8f4f8;
+            border-color: #667eea;
+        }
+
+        .harmony-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .harmony-color {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .harmony-box {
+            width: 100%;
+            height: 60px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h1 style="margin: 0;">🎨 Colour Detective</h1>
+            <button class="btn-secondary" onclick="openSettings()" title="Settings" style="width: 36px; height: 36px; padding: 0; font-size: 18px;">⚙️</button>
+        </div>
+        <p class="subtitle">रंग की पहचान करें - किस तरह बना है</p>
+
+        <div class="color-preview" id="colorPreview">कैमरा या गैलरी से रंग चुनें</div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="startCamera()">📷 कैमरा</button>
+            <button class="btn-primary" onclick="openGallery()">🖼️ गैलरी</button>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-secondary" onclick="resetApp()">🔄 रीसेट</button>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('rgb')">🖥️ RGB<br>(Digital)</button>
+            <button class="mode-btn" onclick="switchMode('ryb')">🎨 RYB<br>(Paint)</button>
+            <button class="mode-btn" onclick="switchMode('hsl')">🌈 HSL<br>(Design)</button>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*">
+        <canvas id="canvas"></canvas>
+
+        <div id="resultsContainer">
+            <div class="color-info">
+                <div style="font-size: 11px; color: #555; margin-bottom: 4px;">HEX Code:</div>
+                <div class="hex-value" id="hexValue">#000000</div>
+            </div>
+
+            <div id="rgbMode">
+                <div class="info-box">
+                    <div class="info-title">📊 RGB वैल्यूज़</div>
+                    <div class="rgb-display">
+                        <div class="rgb-value">
+                            <div style="color: #e74c3c;">लाल</div>
+                            <div class="rgb-red" id="redValue">0</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #27ae60;">हरा</div>
+                            <div class="rgb-green" id="greenValue">0</div>
+                        </div>
+                        <div class="rgb-value">
+                            <div style="color: #3498db;">नीला</div>
+                            <div class="rgb-blue" id="blueValue">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title">🎯 रंगों का मिश्रण (RGB)</div>
+                    <div class="decomposition">
+                        <div class="decomp-item">
+                            <div class="decomp-label">लाल</div>
+                            <div class="decomp-percentage" id="redPercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="redBar" style="width: 0%; background: #e74c3c;"></div>
+                            </div>
+                        </div>
+                        <div class="decomp-item">
+                            <div class="decomp-label">हरा</div>
+                            <div class="decomp-percentage" id="greenPercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="greenBar" style="width: 0%; background: #27ae60;"></div>
+                            </div>
+                        </div>
+                        <div class="decomp-item">
+                            <div class="decomp-label">नीला</div>
+                            <div class="decomp-percentage" id="bluePercent">0%</div>
+                            <div class="decomp-bar">
+                                <div class="decomp-bar-fill" id="blueBar" style="width: 0%; background: #3498db;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="total-percentage">
+                        कुल: <span id="totalPercent">0%</span> ✓
+                    </div>
+                </div>
+            </div>
+
+            <div class="combination-result">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;" id="combinationText">
+                    Loading...
+                </div>
+                <div class="color-boxes">
+                    <div class="small-color-box" id="color1"></div>
+                    <span style="color: white; font-weight: 700; font-size: 14px;">+</span>
+                    <div class="small-color-box" id="color2"></div>
+                    <span style="color: white; font-weight: 700; font-size: 14px;">=</span>
+                    <div class="small-color-box" id="color3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons" id="actionButtons">
+            <button class="action-btn" onclick="openSaveModal()">💾 Save</button>
+            <button class="action-btn" onclick="openPaletteModal()">🎨 Palette</button>
+            <button class="action-btn" onclick="openHarmonyModal()">🔍 Harmony</button>
+            <button class="action-btn" onclick="openExportModal()">📱 Export</button>
+            <button class="action-btn" onclick="openPaintModal()">🛒 Paint</button>
+            <button class="action-btn" onclick="openMyColorsModal()">⭐ My Colors</button>
+        </div>
+    </div>
+
+    <!-- Camera Screen -->
+    <div id="cameraScreen" class="camera-screen">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <canvas id="cameraCanvas" style="display: none;"></canvas>
+        
+        <!-- Crosshair Overlay -->
+        <div id="cameraCrosshair" class="camera-crosshair">
+            <div class="crosshair-h"></div>
+            <div class="crosshair-v"></div>
+        </div>
+
+        <!-- Live Color Display -->
+        <div id="liveColorDisplay" class="picker-color-display" style="display: none;">
+            <div class="live-color-preview" id="liveCameraColorPreview"></div>
+            <div>
+                <div style="font-size: 10px; opacity: 0.8;">RGB:</div>
+                <div id="liveCameraRGB" style="font-weight: 600; font-size: 13px;">R:0 G:0 B:0</div>
+            </div>
+        </div>
+
+        <div class="camera-controls">
+            <button class="btn-primary" style="flex: 1;" onclick="captureFromCamera()">📸 Capture</button>
+            <button class="btn-secondary" style="flex: 1;" onclick="stopCamera()">✕ Close</button>
+        </div>
+    </div>
+
+    <!-- Color Picker Overlay -->
+    <div id="colorPickerOverlay" class="color-picker-overlay">
+        <div class="picker-image-container">
+            <div class="picker-info-box">👆 Tap to pick color</div>
+            <img id="pickerImage" src="" alt="Photo">
+            <div class="picker-crosshair"></div>
+            <div class="picker-buttons">
+                <button class="btn-primary" style="flex: 1;" onclick="confirmPickedColor()">✓ Select</button>
+                <button class="btn-secondary" style="flex: 1;" onclick="closeColorPicker()">✕ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">⚙️ Settings</div>
+            <div class="form-group">
+                <label class="form-label">Language / भाषा</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="modal-btn modal-btn-confirm" onclick="changeLanguage('en')">🇬🇧 English</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="changeLanguage('hi')">🇮🇳 हिंदी</button>
+                </div>
+            </div>
+            <div style="margin-bottom: 12px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+                <div style="font-size: 11px; color: #666;"><strong>📦 Version:</strong> 4.1.0</div>
+                <div style="font-size: 11px; color: #666;"><strong>💾 Saved Colors:</strong> <span id="savedColorCount">0</span></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('settingsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Color Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">💾 Save This Color</div>
+            <div id="previewBox" style="width: 100%; height: 60px; border-radius: 8px; margin-bottom: 12px; border: 2px solid #ddd;"></div>
+            <div class="form-group">
+                <label class="form-label">Color Name</label>
+                <input type="text" id="colorName" class="form-input" placeholder="e.g., Sky Blue">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Palette Name</label>
+                <input type="text" id="paletteName" class="form-input" placeholder="e.g., My Favorites">
+            </div>
+            <div class="success-msg" id="saveSuccess">✓ Color saved successfully!</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('saveModal')">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="saveColor()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Palette Modal -->
+    <div id="paletteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🎨 My Palettes</div>
+            <div class="palette-list" id="paletteList"></div>
+            <div style="color: #999; text-align: center; font-size: 12px; padding: 20px;">
+                No palettes yet. Save a color to create one!
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('paletteModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Harmony Modal -->
+    <div id="harmonyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🔍 Color Harmony</div>
+            <div style="margin-bottom: 12px;">
+                <small style="color: #666;">Base Color:</small>
+                <div id="baseColorBox" style="width: 100%; height: 50px; border-radius: 8px; margin-top: 6px; border: 2px solid #ddd;"></div>
+            </div>
+            <div id="harmonyGrid" class="harmony-grid"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('harmonyModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">📱 Export Color</div>
+            <div class="form-group">
+                <label class="form-label">Format</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+                        <input type="radio" name="exportFormat" value="json" checked> JSON
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+                        <input type="radio" name="exportFormat" value="csv"> CSV
+                    </label>
+                </div>
+            </div>
+            <div class="success-msg" id="exportSuccess">✓ Exported to clipboard!</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('exportModal')">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="exportColor()">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paint Modal -->
+    <div id="paintModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🛒 Paint Brand Matching</div>
+            <div id="paintMatches" style="margin-bottom: 12px;"></div>
+            <div style="color: #999; text-align: center; font-size: 12px; padding: 20px;">
+                Similar paint colors from popular brands
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('paintModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Colors Modal -->
+    <div id="myColorsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">⭐ My Saved Colors</div>
+            <div id="savedColorsList" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;"></div>
+            <div style="color: #999; text-align: center; font-size: 12px; padding: 20px;">
+                No saved colors yet
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal('myColorsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        🎨 Colour Detective v4.1 | रंग की सभी जानकारी एक जगह
+    </footer>
+
+    <script>
+        let currentColor = null;
+        let savedColors = JSON.parse(localStorage.getItem('savedColors')) || [];
+        let stream = null;
+        let pickedImageData = null;
+
+        // Initialize
+        updateActionButtonsVisibility();
+
+        function updateActionButtonsVisibility() {
+            const btn = document.getElementById('actionButtons');
+            btn.style.display = currentColor ? 'grid' : 'grid';
+            btn.style.opacity = currentColor ? '1' : '0.6';
+            const buttons = btn.querySelectorAll('.action-btn');
+            buttons.forEach(b => b.style.pointerEvents = currentColor ? 'auto' : 'none');
+        }
+
+        // CAMERA FUNCTIONS
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+                const video = document.getElementById('cameraVideo');
+                video.srcObject = stream;
+                document.getElementById('cameraScreen').classList.add('active');
+                updateLiveCameraColor();
+            } catch (err) {
+                alert('Camera permission denied or not available');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (cameraAnimationId) {
+                cancelAnimationFrame(cameraAnimationId);
+            }
+            document.getElementById('cameraScreen').classList.remove('active');
+            document.getElementById('liveColorDisplay').style.display = 'none';
+        }
+
+        function captureFromCamera() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('pickerImage').src = url;
+                pickedImageData = url;
+                document.getElementById('colorPickerOverlay').classList.add('active');
+                stopCamera();
+                document.getElementById('liveColorDisplay').style.display = 'none';
+            });
+        }
+
+        // Live camera color preview
+        let cameraAnimationId = null;
+        function updateLiveCameraColor() {
+            const video = document.getElementById('cameraVideo');
+            if (video.videoWidth === 0) {
+                cameraAnimationId = requestAnimationFrame(updateLiveCameraColor);
+                return;
+            }
+            
+            const canvas = document.getElementById('cameraCanvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            const centerX = Math.floor(video.videoWidth / 2);
+            const centerY = Math.floor(video.videoHeight / 2);
+            const imageData = ctx.getImageData(centerX, centerY, 1, 1);
+            const data = imageData.data;
+
+            const rgb = `rgb(${data[0]}, ${data[1]}, ${data[2]})`;
+            document.getElementById('liveCameraColorPreview').style.backgroundColor = rgb;
+            document.getElementById('liveCameraRGB').textContent = `R:${data[0]} G:${data[1]} B:${data[2]}`;
+            document.getElementById('liveColorDisplay').style.display = 'flex';
+
+            cameraAnimationId = requestAnimationFrame(updateLiveCameraColor);
+        }
+
+        // GALLERY FUNCTIONS
+        function openGallery() {
+            document.getElementById('fileInput').click();
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('pickerImage').src = event.target.result;
+                pickedImageData = event.target.result;
+                document.getElementById('colorPickerOverlay').classList.add('active');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // COLOR PICKER
+        document.getElementById('pickerImage').addEventListener('click', function(e) {
+            const img = e.target;
+            const rect = img.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const tempImg = new Image();
+            
+            tempImg.onload = function() {
+                canvas.width = tempImg.width;
+                canvas.height = tempImg.height;
+                ctx.drawImage(tempImg, 0, 0);
+
+                const scaleX = tempImg.width / rect.width;
+                const scaleY = tempImg.height / rect.height;
+                const imageData = ctx.getImageData(x * scaleX, y * scaleY, 1, 1);
+                const data = imageData.data;
+
+                displayColor(data[0], data[1], data[2]);
+                closeColorPicker();
+            };
+            tempImg.src = document.getElementById('pickerImage').src;
+        });
+
+        function confirmPickedColor() {
+            const img = document.getElementById('pickerImage');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const tempImg = new Image();
+            
+            tempImg.onload = function() {
+                canvas.width = tempImg.width;
+                canvas.height = tempImg.height;
+                ctx.drawImage(tempImg, 0, 0);
+
+                const centerX = Math.floor(tempImg.width / 2);
+                const centerY = Math.floor(tempImg.height / 2);
+                const imageData = ctx.getImageData(centerX, centerY, 1, 1);
+                const data = imageData.data;
+
+                displayColor(data[0], data[1], data[2]);
+                closeColorPicker();
+            };
+            tempImg.src = img.src;
+        }
+
+        function closeColorPicker() {
+            document.getElementById('colorPickerOverlay').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+        }
+
+        // DISPLAY COLOR
+        function displayColor(r, g, b) {
+            currentColor = { r, g, b };
+            
+            const hex = '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('').toUpperCase();
+
+            const rgb = `rgb(${r}, ${g}, ${b})`;
+
+            document.getElementById('colorPreview').style.backgroundColor = rgb;
+            document.getElementById('colorPreview').textContent = '';
+            document.getElementById('colorPreview').classList.add('active');
+
+            document.getElementById('hexValue').textContent = hex;
+            document.getElementById('redValue').textContent = r;
+            document.getElementById('greenValue').textContent = g;
+            document.getElementById('blueValue').textContent = b;
+
+            // Calculate percentages correctly - each as 0-100
+            const redPercent = Math.round((r / 255) * 100);
+            const greenPercent = Math.round((g / 255) * 100);
+            const bluePercent = Math.round((b / 255) * 100);
+
+            document.getElementById('redPercent').textContent = redPercent + '%';
+            document.getElementById('greenPercent').textContent = greenPercent + '%';
+            document.getElementById('bluePercent').textContent = bluePercent + '%';
+
+            document.getElementById('redBar').style.width = redPercent + '%';
+            document.getElementById('greenBar').style.width = greenPercent + '%';
+            document.getElementById('blueBar').style.width = bluePercent + '%';
+
+            document.getElementById('totalPercent').textContent = '100%';
+
+            document.getElementById('color1').style.backgroundColor = `rgb(${r}, 0, 0)`;
+            document.getElementById('color2').style.backgroundColor = `rgb(0, ${g}, 0)`;
+            document.getElementById('color3').style.backgroundColor = rgb;
+
+            document.getElementById('resultsContainer').classList.add('show');
+            updateActionButtonsVisibility();
+        }
+
+        // ACTION BUTTONS
+        function openSaveModal() {
+            if (!currentColor) return;
+            const rgb = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
+            document.getElementById('previewBox').style.backgroundColor = rgb;
+            openModal('saveModal');
+        }
+
+        function saveColor() {
+            const name = document.getElementById('colorName').value || `Color ${savedColors.length + 1}`;
+            const palette = document.getElementById('paletteName').value || 'Default';
+            
+            const hex = '#' + [currentColor.r, currentColor.g, currentColor.b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('').toUpperCase();
+
+            savedColors.push({ name, palette, hex, r: currentColor.r, g: currentColor.g, b: currentColor.b });
+            localStorage.setItem('savedColors', JSON.stringify(savedColors));
+            
+            document.getElementById('saveSuccess').style.display = 'block';
+            document.getElementById('colorName').value = '';
+            document.getElementById('paletteName').value = '';
+            document.getElementById('savedColorCount').textContent = savedColors.length;
+
+            setTimeout(() => {
+                document.getElementById('saveSuccess').style.display = 'none';
+            }, 3000);
+        }
+
+        function openPaletteModal() {
+            const palettes = [...new Set(savedColors.map(c => c.palette))];
+            const list = document.getElementById('paletteList');
+            list.innerHTML = '';
+            
+            palettes.forEach(palette => {
+                const colors = savedColors.filter(c => c.palette === palette);
+                const div = document.createElement('div');
+                div.className = 'palette-item';
+                div.innerHTML = `<strong>${palette}</strong> (${colors.length} colors)`;
+                list.appendChild(div);
+            });
+
+            openModal('paletteModal');
+        }
+
+        function openHarmonyModal() {
+            if (!currentColor) return;
+            
+            const hex = '#' + [currentColor.r, currentColor.g, currentColor.b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('').toUpperCase();
+
+            const rgb = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
+            document.getElementById('baseColorBox').style.backgroundColor = rgb;
+
+            const harmonies = generateHarmony(currentColor.r, currentColor.g, currentColor.b);
+            const grid = document.getElementById('harmonyGrid');
+            grid.innerHTML = '';
+
+            Object.entries(harmonies).forEach(([name, color]) => {
+                const div = document.createElement('div');
+                div.className = 'harmony-color';
+                div.innerHTML = `
+                    <div class="harmony-box" style="background: ${color};"></div>
+                    <div style="font-size: 11px; color: #666;">${name}</div>
+                `;
+                grid.appendChild(div);
+            });
+
+            openModal('harmonyModal');
+        }
+
+        function generateHarmony(r, g, b) {
+            const hsl = rgbToHsl(r, g, b);
+            return {
+                'Complementary': hslToRgb((hsl.h + 180) % 360, hsl.s, hsl.l),
+                'Analogous': hslToRgb((hsl.h + 30) % 360, hsl.s, hsl.l),
+                'Triadic': hslToRgb((hsl.h + 120) % 360, hsl.s, hsl.l),
+                'Tetradic': hslToRgb((hsl.h + 90) % 360, hsl.s, hsl.l)
+            };
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: h * 360, s, l };
+        }
+
+        function hslToRgb(h, s, l) {
+            h = h / 360;
+            let r, g, b;
+
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+
+            return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+        }
+
+        function openExportModal() {
+            if (!currentColor) return;
+            openModal('exportModal');
+        }
+
+        function exportColor() {
+            const format = document.querySelector('input[name="exportFormat"]:checked').value;
+            const hex = '#' + [currentColor.r, currentColor.g, currentColor.b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('').toUpperCase();
+
+            let data;
+            if (format === 'json') {
+                data = JSON.stringify({
+                    hex: hex,
+                    rgb: `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`,
+                    r: currentColor.r,
+                    g: currentColor.g,
+                    b: currentColor.b
+                }, null, 2);
+            } else {
+                data = `HEX,R,G,B\n${hex},${currentColor.r},${currentColor.g},${currentColor.b}`;
+            }
+
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `color_${hex.slice(1)}.${format === 'json' ? 'json' : 'csv'}`;
+            a.click();
+
+            document.getElementById('exportSuccess').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('exportSuccess').style.display = 'none';
+            }, 3000);
+        }
+
+        function openPaintModal() {
+            if (!currentColor) return;
+            const matches = [
+                { brand: 'Cadmium Red (Winsor & Newton)', name: 'Cadmium Red', hex: '#ED3D3D' },
+                { brand: 'Ultramarine Blue (Faber-Castell)', name: 'Ultramarine Blue', hex: '#120A8F' },
+                { brand: 'Yellow Ochre (Grumbacher)', name: 'Yellow Ochre', hex: '#CC7722' },
+                { brand: 'Alizarin Crimson (Rembrandt)', name: 'Alizarin Crimson', hex: '#E30B5C' },
+                { brand: 'Viridian Green (Golden)', name: 'Viridian Green', hex: '#007E60' },
+                { brand: 'Burnt Sienna (Gamblin)', name: 'Burnt Sienna', hex: '#8B4513' },
+                { brand: 'Cerulean Blue (Holbein)', name: 'Cerulean Blue', hex: '#007BA7' },
+                { brand: 'Titanium White (Liquitex)', name: 'Titanium White', hex: '#F5F5F5' },
+                { brand: 'Ivory Black (Blick)', name: 'Ivory Black', hex: '#2F2F2F' },
+                { brand: 'Alizarin Orange (Daler-Rowney)', name: 'Alizarin Orange', hex: '#FF7F50' }
+            ];
+            const html = matches.map(m => `
+                <div style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9;">
+                    <div style="width: 100%; height: 40px; background: ${m.hex}; border-radius: 6px; margin-bottom: 10px; border: 2px solid #ddd;"></div>
+                    <div style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 4px;">${m.brand}</div>
+                    <div style="font-size: 11px; color: #666;">${m.hex}</div>
+                </div>
+            `).join('');
+            document.getElementById('paintMatches').innerHTML = html;
+            openModal('paintModal');
+        }
+
+        function openMyColorsModal() {
+            const list = document.getElementById('savedColorsList');
+            list.innerHTML = '';
+            if (savedColors.length === 0) {
+                list.parentElement.style.display = 'none';
+            } else {
+                list.parentElement.style.display = 'grid';
+                savedColors.forEach(color => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `background: ${color.hex}; border-radius: 8px; cursor: pointer; height: 60px;`;
+                    div.title = color.name;
+                    list.appendChild(div);
+                });
+            }
+            openModal('myColorsModal');
+        }
+
+        // MODAL FUNCTIONS
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function openSettings() {
+            openModal('settingsModal');
+        }
+
+        function changeLanguage(lang) {
+            alert(`Language changed to ${lang === 'en' ? 'English' : 'हिंदी'}`);
+        }
+
+        function resetApp() {
+            currentColor = null;
+            document.getElementById('colorPreview').style.backgroundColor = '#f5f5f5';
+            document.getElementById('colorPreview').textContent = 'कैमरा या गैलरी से रंग चुनें';
+            document.getElementById('resultsContainer').classList.remove('show');
+            updateActionButtonsVisibility();
+        }
+
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.mode-btn').classList.add('active');
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
